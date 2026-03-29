@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black-Scholes Option Pricing Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2035;
+            --bg-input: #0f1629;
+            --border: #2a3455;
+            --accent: #3b82f6;
+            --accent-light: #60a5fa;
+            --green: #10b981;
+            --red: #ef4444;
+            --orange: #f59e0b;
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a2035 0%, #0f1629 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 24px 40px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-icon {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--text-primary), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 2px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 40px;
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 24px;
+        }
+
+        /* Input Panel */
+        .input-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title span {
+            font-size: 16px;
+        }
+
+        .input-group {
+            margin-bottom: 14px;
+        }
+
+        .input-group:last-child { margin-bottom: 0; }
+
+        .input-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .input-group label .unit {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .input-group input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-input);
+            outline: none;
+        }
+
+        .input-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            border: 2px solid var(--bg-card);
+            box-shadow: 0 0 8px rgba(59,130,246,0.4);
+        }
+
+        .input-value {
+            display: inline-block;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-light);
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .option-type-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .option-type-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .option-type-btn.active-call {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .option-type-btn.active-put {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        /* Results Panel */
+        .results-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Price Cards */
+        .price-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .price-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .price-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+
+        .price-card.call::before {
+            background: linear-gradient(90deg, var(--green), var(--cyan));
+        }
+
+        .price-card.put::before {
+            background: linear-gradient(90deg, var(--red), var(--orange));
+        }
+
+        .price-card .label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .price-card .price {
+            font-size: 36px;
+            font-weight: 700;
+        }
+
+        .price-card.call .price { color: var(--green); }
+        .price-card.put .price { color: var(--red); }
+
+        .price-card .sublabel {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Greeks Grid */
+        .greeks-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .greek-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .greek-card .greek-symbol {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .greek-card .greek-name {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .greek-card .greek-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent-light);
+        }
+
+        .greek-card .greek-desc {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Charts */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .chart-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 260px;
+        }
+
+        /* Formula Section */
+        .formula-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .formula-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .formula-box {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 2;
+            color: var(--text-primary);
+            overflow-x: auto;
+        }
+
+        .formula-box .var { color: var(--accent-light); font-weight: 600; }
+        .formula-box .func { color: var(--purple); }
+        .formula-box .op { color: var(--orange); }
+
+        .d-values {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .d-value-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .d-value-card .d-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .d-value-card .d-num {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--purple);
+            margin: 4px 0;
+        }
+
+        /* Put-Call Parity */
+        .parity-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .parity-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .parity-check {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .parity-side {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .parity-side .parity-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .parity-side .parity-val {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--cyan);
+        }
+
+        .parity-eq {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--green);
+        }
+
+        /* Moneyness indicator */
+        .moneyness {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .moneyness.itm { background: rgba(16,185,129,0.15); color: var(--green); }
+        .moneyness.atm { background: rgba(245,158,11,0.15); color: var(--orange); }
+        .moneyness.otm { background: rgba(239,68,68,0.15); color: var(--red); }
+
+        @media (max-width: 1200px) {
+            .main-container { grid-template-columns: 1fr; }
+            .greeks-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .main-container { padding: 16px; }
+            .charts-row { grid-template-columns: 1fr; }
+            .price-row { grid-template-columns: 1fr; }
+            .greeks-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-icon">BS</div>
+    <div>
+        <h1>Black-Scholes Option Pricing Tool</h1>
+        <p>Modele de valorisation d'options europeennes &mdash; Greeks, Payoff & Sensibilites</p>
+    </div>
+</div>
+
+<div class="main-container">
+    <!-- Input Panel -->
+    <div class="input-panel">
+        <div class="card">
+            <div class="card-title"><span>&#9881;</span> Parametres</div>
+
+            <div class="option-type-selector">
+                <button class="option-type-btn active-call" id="btnCall" onclick="setType('call')">CALL</button>
+                <button class="option-type-btn" id="btnPut" onclick="setType('put')">PUT</button>
+            </div>
+
+            <div class="input-group">
+                <label>Prix Spot (S) <span class="input-value" id="valS">100</span></label>
+                <input type="range" id="sliderS" min="10" max="300" value="100" step="1" oninput="update()">
+            </div>
+
+            <div class="input-group">
+                <label>Prix d'Exercice (K) <span class="input-value" id="valK">100</span></label>
+                <input type="range" id="sliderK" min="10" max="300" value="100" step="1" oninput="update()">
+            </div>
+
+            <div class="input-group">
+                <label>Volatilite (&#963;) <span class="input-value" id="valSigma">25%</span></label>
+                <input type="range" id="sliderSigma" min="5" max="100" value="25" step="1" oninput="update()">
+            </div>
+
+            <div class="input-group">
+                <label>Taux sans risque (r) <span class="input-value" id="valR">5.0%</span></label>
+                <input type="range" id="sliderR" min="0" max="15" value="5" step="0.1" oninput="update()">
+            </div>
+
+            <div class="input-group">
+                <label>Maturite (T) <span class="input-value" id="valT">1.0 an</span></label>
+                <input type="range" id="sliderT" min="0.05" max="5" value="1" step="0.05" oninput="update()">
+            </div>
+
+            <div class="input-group">
+                <label>Dividende (q) <span class="input-value" id="valQ">0.0%</span></label>
+                <input type="range" id="sliderQ" min="0" max="10" value="0" step="0.1" oninput="update()">
+            </div>
+        </div>
+
+        <!-- Formula -->
+        <div class="card">
+            <div class="card-title"><span>&#8747;</span> Formule Black-Scholes</div>
+            <div class="formula-box">
+                <span class="var">C</span> = <span class="var">S</span><span class="func">N</span>(<span class="var">d<sub>1</sub></span>) - <span class="var">K</span>e<sup><span class="op">-rT</span></sup><span class="func">N</span>(<span class="var">d<sub>2</sub></span>)<br>
+                <span class="var">P</span> = <span class="var">K</span>e<sup><span class="op">-rT</span></sup><span class="func">N</span>(-<span class="var">d<sub>2</sub></span>) - <span class="var">S</span><span class="func">N</span>(-<span class="var">d<sub>1</sub></span>)<br><br>
+                <span class="var">d<sub>1</sub></span> = [ln(<span class="var">S/K</span>) + (<span class="var">r</span> + <span class="var">&#963;</span><sup>2</sup>/2)<span class="var">T</span>] / <span class="var">&#963;</span>&radic;<span class="var">T</span><br>
+                <span class="var">d<sub>2</sub></span> = <span class="var">d<sub>1</sub></span> - <span class="var">&#963;</span>&radic;<span class="var">T</span>
+            </div>
+
+            <div class="d-values">
+                <div class="d-value-card">
+                    <div class="d-label">d&#8321;</div>
+                    <div class="d-num" id="d1Val">0.3250</div>
+                </div>
+                <div class="d-value-card">
+                    <div class="d-label">d&#8322;</div>
+                    <div class="d-num" id="d2Val">0.0750</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Put-Call Parity -->
+        <div class="card">
+            <div class="card-title"><span>&#9878;</span> Parite Put-Call</div>
+            <div class="parity-check">
+                <div class="parity-side">
+                    <div class="parity-label">C - P</div>
+                    <div class="parity-val" id="parityLeft">0.00</div>
+                </div>
+                <div class="parity-eq">=</div>
+                <div class="parity-side">
+                    <div class="parity-label">S - Ke<sup>-rT</sup></div>
+                    <div class="parity-val" id="parityRight">0.00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="results-panel">
+        <!-- Prices -->
+        <div class="price-row">
+            <div class="price-card call">
+                <div class="label">Prix du Call</div>
+                <div class="price" id="callPrice">10.45</div>
+                <div class="sublabel">
+                    Valeur intrinseque: <strong id="callIntrinsic">0.00</strong> &nbsp;|&nbsp;
+                    Valeur temps: <strong id="callTime">10.45</strong>
+                </div>
+                <div style="margin-top: 8px;">
+                    <span class="moneyness" id="callMoneyness">ATM</span>
+                </div>
+            </div>
+            <div class="price-card put">
+                <div class="label">Prix du Put</div>
+                <div class="price" id="putPrice">5.57</div>
+                <div class="sublabel">
+                    Valeur intrinseque: <strong id="putIntrinsic">0.00</strong> &nbsp;|&nbsp;
+                    Valeur temps: <strong id="putTime">5.57</strong>
+                </div>
+                <div style="margin-top: 8px;">
+                    <span class="moneyness" id="putMoneyness">ATM</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Greeks -->
+        <div class="greeks-grid">
+            <div class="greek-card">
+                <div class="greek-symbol" style="color: var(--green);">&Delta;</div>
+                <div class="greek-name">Delta</div>
+                <div class="greek-value" id="greekDelta">0.6368</div>
+                <div class="greek-desc">Sensibilite au prix</div>
+            </div>
+            <div class="greek-card">
+                <div class="greek-symbol" style="color: var(--orange);">&Gamma;</div>
+                <div class="greek-name">Gamma</div>
+                <div class="greek-value" id="greekGamma">0.0153</div>
+                <div class="greek-desc">Variation du Delta</div>
+            </div>
+            <div class="greek-card">
+                <div class="greek-symbol" style="color: var(--red);">&Theta;</div>
+                <div class="greek-name">Theta</div>
+                <div class="greek-value" id="greekTheta">-6.414</div>
+                <div class="greek-desc">Erosion temporelle / an</div>
+            </div>
+            <div class="greek-card">
+                <div class="greek-symbol" style="color: var(--purple);">V</div>
+                <div class="greek-name">Vega</div>
+                <div class="greek-value" id="greekVega">38.33</div>
+                <div class="greek-desc">Sensibilite a la vol.</div>
+            </div>
+            <div class="greek-card">
+                <div class="greek-symbol" style="color: var(--cyan);">&rho;</div>
+                <div class="greek-name">Rho</div>
+                <div class="greek-value" id="greekRho">53.23</div>
+                <div class="greek-desc">Sensibilite au taux</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-row">
+            <div class="chart-card">
+                <h3>Payoff a l'Echeance vs Prix du Sous-Jacent</h3>
+                <div class="chart-container">
+                    <canvas id="payoffChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Prix de l'Option vs Prix du Sous-Jacent</h3>
+                <div class="chart-container">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-card">
+                <h3>Delta vs Prix du Sous-Jacent</h3>
+                <div class="chart-container">
+                    <canvas id="deltaChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Prix de l'Option vs Volatilite</h3>
+                <div class="chart-container">
+                    <canvas id="volChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== Black-Scholes Mathematics =====
+function normCDF(x) {
+    const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+    const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+    const sign = x < 0 ? -1 : 1;
+    x = Math.abs(x) / Math.sqrt(2);
+    const t = 1.0 / (1.0 + p * x);
+    const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    return 0.5 * (1.0 + sign * y);
+}
+
+function normPDF(x) {
+    return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+}
+
+function blackScholes(S, K, T, r, sigma, q) {
+    if (T <= 0) {
+        const callPayoff = Math.max(S - K, 0);
+        const putPayoff = Math.max(K - S, 0);
+        return {
+            call: callPayoff, put: putPayoff,
+            d1: 0, d2: 0,
+            delta: { call: S > K ? 1 : 0, put: S < K ? -1 : 0 },
+            gamma: 0, theta: { call: 0, put: 0 },
+            vega: 0, rho: { call: 0, put: 0 }
+        };
+    }
+
+    const sqrtT = Math.sqrt(T);
+    const d1 = (Math.log(S / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * sqrtT);
+    const d2 = d1 - sigma * sqrtT;
+
+    const Nd1 = normCDF(d1);
+    const Nd2 = normCDF(d2);
+    const Nnd1 = normCDF(-d1);
+    const Nnd2 = normCDF(-d2);
+    const nd1 = normPDF(d1);
+
+    const expQT = Math.exp(-q * T);
+    const expRT = Math.exp(-r * T);
+
+    const call = S * expQT * Nd1 - K * expRT * Nd2;
+    const put = K * expRT * Nnd2 - S * expQT * Nnd1;
+
+    // Greeks
+    const deltaCall = expQT * Nd1;
+    const deltaPut = -expQT * Nnd1;
+
+    const gamma = (expQT * nd1) / (S * sigma * sqrtT);
+
+    const thetaCall = (-(S * sigma * expQT * nd1) / (2 * sqrtT)
+        - r * K * expRT * Nd2
+        + q * S * expQT * Nd1);
+
+    const thetaPut = (-(S * sigma * expQT * nd1) / (2 * sqrtT)
+        + r * K * expRT * Nnd2
+        - q * S * expQT * Nnd1);
+
+    const vega = S * expQT * nd1 * sqrtT / 100; // per 1% move
+
+    const rhoCall = K * T * expRT * Nd2 / 100;
+    const rhoPut = -K * T * expRT * Nnd2 / 100;
+
+    return {
+        call, put, d1, d2,
+        delta: { call: deltaCall, put: deltaPut },
+        gamma,
+        theta: { call: thetaCall, put: thetaPut },
+        vega,
+        rho: { call: rhoCall, put: rhoPut }
+    };
+}
+
+// ===== State =====
+let optionType = 'call';
+let payoffChart, priceChart, deltaChart, volChart;
+
+function setType(type) {
+    optionType = type;
+    document.getElementById('btnCall').className = 'option-type-btn' + (type === 'call' ? ' active-call' : '');
+    document.getElementById('btnPut').className = 'option-type-btn' + (type === 'put' ? ' active-put' : '');
+    update();
+}
+
+function getParams() {
+    const S = parseFloat(document.getElementById('sliderS').value);
+    const K = parseFloat(document.getElementById('sliderK').value);
+    const sigma = parseFloat(document.getElementById('sliderSigma').value) / 100;
+    const r = parseFloat(document.getElementById('sliderR').value) / 100;
+    const T = parseFloat(document.getElementById('sliderT').value);
+    const q = parseFloat(document.getElementById('sliderQ').value) / 100;
+    return { S, K, sigma, r, T, q };
+}
+
+function update() {
+    const { S, K, sigma, r, T, q } = getParams();
+
+    // Update labels
+    document.getElementById('valS').textContent = S.toFixed(0);
+    document.getElementById('valK').textContent = K.toFixed(0);
+    document.getElementById('valSigma').textContent = (sigma * 100).toFixed(0) + '%';
+    document.getElementById('valR').textContent = (r * 100).toFixed(1) + '%';
+    document.getElementById('valT').textContent = T.toFixed(2) + ' an';
+    document.getElementById('valQ').textContent = (q * 100).toFixed(1) + '%';
+
+    const bs = blackScholes(S, K, T, r, sigma, q);
+
+    // Prices
+    document.getElementById('callPrice').textContent = bs.call.toFixed(2);
+    document.getElementById('putPrice').textContent = bs.put.toFixed(2);
+
+    // Intrinsic / Time value
+    const callIntr = Math.max(S - K, 0);
+    const putIntr = Math.max(K - S, 0);
+    document.getElementById('callIntrinsic').textContent = callIntr.toFixed(2);
+    document.getElementById('callTime').textContent = (bs.call - callIntr).toFixed(2);
+    document.getElementById('putIntrinsic').textContent = putIntr.toFixed(2);
+    document.getElementById('putTime').textContent = (bs.put - putIntr).toFixed(2);
+
+    // Moneyness
+    function setMoneyness(id, isITM, ratio) {
+        const el = document.getElementById(id);
+        if (Math.abs(ratio - 1) < 0.02) {
+            el.textContent = 'ATM'; el.className = 'moneyness atm';
+        } else if (isITM) {
+            el.textContent = 'ITM'; el.className = 'moneyness itm';
+        } else {
+            el.textContent = 'OTM'; el.className = 'moneyness otm';
+        }
+    }
+    setMoneyness('callMoneyness', S > K, S / K);
+    setMoneyness('putMoneyness', S < K, S / K);
+
+    // d1, d2
+    document.getElementById('d1Val').textContent = bs.d1.toFixed(4);
+    document.getElementById('d2Val').textContent = bs.d2.toFixed(4);
+
+    // Greeks
+    const isCall = optionType === 'call';
+    document.getElementById('greekDelta').textContent = (isCall ? bs.delta.call : bs.delta.put).toFixed(4);
+    document.getElementById('greekGamma').textContent = bs.gamma.toFixed(4);
+    document.getElementById('greekTheta').textContent = (isCall ? bs.theta.call : bs.theta.put).toFixed(3);
+    document.getElementById('greekVega').textContent = bs.vega.toFixed(2);
+    document.getElementById('greekRho').textContent = (isCall ? bs.rho.call : bs.rho.put).toFixed(2);
+
+    // Put-Call Parity
+    const pLeft = (bs.call - bs.put).toFixed(4);
+    const pRight = (S * Math.exp(-q * T) - K * Math.exp(-r * T)).toFixed(4);
+    document.getElementById('parityLeft').textContent = pLeft;
+    document.getElementById('parityRight').textContent = pRight;
+
+    updateCharts();
+}
+
+// ===== Charts =====
+const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
+    },
+    scales: {
+        x: {
+            grid: { color: 'rgba(42,52,85,0.5)' },
+            ticks: { color: '#64748b', font: { size: 10 } }
+        },
+        y: {
+            grid: { color: 'rgba(42,52,85,0.5)' },
+            ticks: { color: '#64748b', font: { size: 10 } }
+        }
+    }
+};
+
+function updateCharts() {
+    const { S, K, sigma, r, T, q } = getParams();
+    const isCall = optionType === 'call';
+
+    // Range of spot prices for charts
+    const sMin = Math.max(K * 0.4, 5);
+    const sMax = K * 1.6;
+    const spots = [];
+    for (let s = sMin; s <= sMax; s += (sMax - sMin) / 80) spots.push(s);
+
+    // Payoff chart
+    const payoffs = spots.map(s => isCall ? Math.max(s - K, 0) : Math.max(K - s, 0));
+    const premiums = spots.map(s => {
+        const b = blackScholes(s, K, T, r, sigma, q);
+        return isCall ? b.call : b.put;
+    });
+    const profitLoss = spots.map((s, i) => {
+        const premium = blackScholes(S, K, T, r, sigma, q);
+        const prem = isCall ? premium.call : premium.put;
+        return payoffs[i] - prem;
+    });
+
+    if (payoffChart) payoffChart.destroy();
+    payoffChart = new Chart(document.getElementById('payoffChart'), {
+        type: 'line',
+        data: {
+            labels: spots.map(s => s.toFixed(0)),
+            datasets: [
+                {
+                    label: 'Payoff',
+                    data: payoffs,
+                    borderColor: isCall ? '#10b981' : '#ef4444',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                },
+                {
+                    label: 'Profit/Perte',
+                    data: profitLoss,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [5, 3],
+                    pointRadius: 0,
+                },
+                {
+                    label: 'Zero',
+                    data: spots.map(() => 0),
+                    borderColor: '#64748b',
+                    backgroundColor: 'transparent',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    borderDash: [2, 2],
+                }
+            ]
+        },
+        options: { ...chartDefaults }
+    });
+
+    // Option price vs spot
+    const callPrices = spots.map(s => blackScholes(s, K, T, r, sigma, q).call);
+    const putPrices = spots.map(s => blackScholes(s, K, T, r, sigma, q).put);
+
+    if (priceChart) priceChart.destroy();
+    priceChart = new Chart(document.getElementById('priceChart'), {
+        type: 'line',
+        data: {
+            labels: spots.map(s => s.toFixed(0)),
+            datasets: [
+                {
+                    label: 'Call',
+                    data: callPrices,
+                    borderColor: '#10b981',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                },
+                {
+                    label: 'Put',
+                    data: putPrices,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                }
+            ]
+        },
+        options: { ...chartDefaults }
+    });
+
+    // Delta vs spot
+    const deltasCAll = spots.map(s => blackScholes(s, K, T, r, sigma, q).delta.call);
+    const deltasPut = spots.map(s => blackScholes(s, K, T, r, sigma, q).delta.put);
+
+    if (deltaChart) deltaChart.destroy();
+    deltaChart = new Chart(document.getElementById('deltaChart'), {
+        type: 'line',
+        data: {
+            labels: spots.map(s => s.toFixed(0)),
+            datasets: [
+                {
+                    label: 'Delta Call',
+                    data: deltasCAll,
+                    borderColor: '#10b981',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                },
+                {
+                    label: 'Delta Put',
+                    data: deltasPut,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                }
+            ]
+        },
+        options: { ...chartDefaults }
+    });
+
+    // Price vs Volatility
+    const vols = [];
+    for (let v = 5; v <= 80; v += 1) vols.push(v / 100);
+    const callByVol = vols.map(v => blackScholes(S, K, T, r, v, q).call);
+    const putByVol = vols.map(v => blackScholes(S, K, T, r, v, q).put);
+
+    if (volChart) volChart.destroy();
+    volChart = new Chart(document.getElementById('volChart'), {
+        type: 'line',
+        data: {
+            labels: vols.map(v => (v * 100).toFixed(0) + '%'),
+            datasets: [
+                {
+                    label: 'Call',
+                    data: callByVol,
+                    borderColor: '#10b981',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                },
+                {
+                    label: 'Put',
+                    data: putByVol,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                }
+            ]
+        },
+        options: { ...chartDefaults }
+    });
+}
+
+// Initialize
+update();
+</script>
+
+</body>
+</html>
