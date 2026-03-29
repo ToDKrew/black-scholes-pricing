@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
         :root {
             --bg: #fafbfc;
@@ -405,6 +406,53 @@
             color: var(--accent);
         }
 
+        /* Surface 3D */
+        .surface-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            box-shadow: var(--shadow-sm);
+        }
+        .surface-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .surface-header h3 {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+        }
+        .surface-toggle {
+            display: flex;
+            background: var(--bg);
+            border-radius: 6px;
+            padding: 2px;
+        }
+        .surface-btn {
+            padding: 5px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            letter-spacing: 0.3px;
+        }
+        .surface-btn.active {
+            background: var(--surface);
+            color: var(--accent);
+            box-shadow: var(--shadow-sm);
+        }
+        .surface-wrap { height: 420px; }
+
         /* Footer */
         .footer {
             text-align: center;
@@ -584,6 +632,17 @@
                 <div class="chart-wrap"><canvas id="volChart"></canvas></div>
             </div>
         </div>
+
+        <div class="surface-card">
+            <div class="surface-header">
+                <h3>3D Pricing Surface</h3>
+                <div class="surface-toggle">
+                    <button class="surface-btn active" id="btnSurfSV" onclick="setSurfaceMode('spot-vol')">Spot &times; Volatility</button>
+                    <button class="surface-btn" id="btnSurfST" onclick="setSurfaceMode('spot-mat')">Spot &times; Maturity</button>
+                </div>
+            </div>
+            <div class="surface-wrap" id="surface3d"></div>
+        </div>
     </div>
 </div>
 
@@ -685,6 +744,7 @@ function update(){
     document.getElementById('parityRight').textContent=(S*Math.exp(-q*T)-K*Math.exp(-r*T)).toFixed(4);
 
     updateCharts();
+    updateSurface();
 }
 
 // ===== Charts =====
@@ -760,6 +820,100 @@ function updateCharts(){
     volChart.data.datasets[0].data=cv;
     volChart.data.datasets[1].data=pv;
     volChart.update('none');
+}
+
+// ===== 3D Surface =====
+let surfaceMode='spot-vol';
+let surfaceInited=false;
+
+function setSurfaceMode(mode){
+    surfaceMode=mode;
+    document.getElementById('btnSurfSV').className='surface-btn'+(mode==='spot-vol'?' active':'');
+    document.getElementById('btnSurfST').className='surface-btn'+(mode==='spot-mat'?' active':'');
+    updateSurface();
+}
+
+function updateSurface(){
+    const{S,K,sigma,r,T,q}=getP();
+    const isC=optionType==='call';
+    const nX=40,nY=40;
+
+    let xVals=[],yVals=[],zVals=[],xLabel,yLabel;
+
+    if(surfaceMode==='spot-vol'){
+        xLabel='Spot Price';
+        yLabel='Volatility (%)';
+        const sMin=Math.max(K*0.5,10),sMax=K*1.5;
+        const vMin=5,vMax=80;
+        for(let i=0;i<=nX;i++)xVals.push(sMin+(sMax-sMin)*i/nX);
+        for(let j=0;j<=nY;j++)yVals.push(vMin+(vMax-vMin)*j/nY);
+        for(let j=0;j<=nY;j++){
+            const row=[];
+            for(let i=0;i<=nX;i++){
+                const res=bs(xVals[i],K,T,r,yVals[j]/100,q);
+                row.push(isC?res.call:res.put);
+            }
+            zVals.push(row);
+        }
+    } else {
+        xLabel='Spot Price';
+        yLabel='Maturity (years)';
+        const sMin=Math.max(K*0.5,10),sMax=K*1.5;
+        const tMin=0.05,tMax=3;
+        for(let i=0;i<=nX;i++)xVals.push(sMin+(sMax-sMin)*i/nX);
+        for(let j=0;j<=nY;j++)yVals.push(tMin+(tMax-tMin)*j/nY);
+        for(let j=0;j<=nY;j++){
+            const row=[];
+            for(let i=0;i<=nX;i++){
+                const res=bs(xVals[i],K,yVals[j],r,sigma,q);
+                row.push(isC?res.call:res.put);
+            }
+            zVals.push(row);
+        }
+    }
+
+    const data=[{
+        type:'surface',
+        x:xVals,
+        y:yVals,
+        z:zVals,
+        colorscale:isC?[[0,'#d1fae5'],[0.5,'#059669'],[1,'#064e3b']]:[[0,'#fee2e2'],[0.5,'#dc2626'],[1,'#7f1d1d']],
+        showscale:true,
+        colorbar:{
+            title:{text:isC?'Call Price':'Put Price',font:{size:11,family:'Inter',color:'#94a3b8'}},
+            tickfont:{size:10,family:'JetBrains Mono',color:'#94a3b8'},
+            thickness:12,
+            len:0.6
+        },
+        contours:{
+            z:{show:true,usecolormap:true,highlightcolor:'#fff',project:{z:false}}
+        },
+        lighting:{ambient:0.7,diffuse:0.5,specular:0.3,roughness:0.5},
+        opacity:0.95
+    }];
+
+    const layout={
+        scene:{
+            xaxis:{title:{text:xLabel,font:{size:11,family:'Inter',color:'#94a3b8'}},tickfont:{size:9,family:'JetBrains Mono',color:'#94a3b8'},gridcolor:'rgba(0,0,0,0.06)',backgroundcolor:'#fafbfc'},
+            yaxis:{title:{text:yLabel,font:{size:11,family:'Inter',color:'#94a3b8'}},tickfont:{size:9,family:'JetBrains Mono',color:'#94a3b8'},gridcolor:'rgba(0,0,0,0.06)',backgroundcolor:'#fafbfc'},
+            zaxis:{title:{text:isC?'Call Price':'Put Price',font:{size:11,family:'Inter',color:'#94a3b8'}},tickfont:{size:9,family:'JetBrains Mono',color:'#94a3b8'},gridcolor:'rgba(0,0,0,0.06)',backgroundcolor:'#fafbfc'},
+            camera:{eye:{x:1.5,y:-1.8,z:1.2}},
+            aspectratio:{x:1.2,y:1,z:0.8},
+            bgcolor:'#fafbfc'
+        },
+        margin:{l:0,r:0,t:0,b:0},
+        paper_bgcolor:'transparent',
+        font:{family:'Inter'}
+    };
+
+    const config={responsive:true,displayModeBar:true,modeBarButtonsToRemove:['toImage','sendDataToCloud'],displaylogo:false};
+
+    if(!surfaceInited){
+        Plotly.newPlot('surface3d',data,layout,config);
+        surfaceInited=true;
+    } else {
+        Plotly.react('surface3d',data,layout,config);
+    }
 }
 
 update();
