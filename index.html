@@ -3,969 +3,749 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Black-Scholes Option Pricing Tool</title>
+    <title>Black-Scholes Option Pricing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
         :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #111827;
-            --bg-card: #1a2035;
-            --bg-input: #0f1629;
-            --border: #2a3455;
+            --bg: #fafbfc;
+            --surface: #ffffff;
+            --surface-raised: #ffffff;
+            --border: rgba(0,0,0,0.06);
+            --border-hover: rgba(0,0,0,0.1);
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
             --accent: #3b82f6;
-            --accent-light: #60a5fa;
-            --green: #10b981;
-            --red: #ef4444;
-            --orange: #f59e0b;
-            --purple: #8b5cf6;
-            --cyan: #06b6d4;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
+            --accent-soft: rgba(59,130,246,0.08);
+            --call: #059669;
+            --call-soft: rgba(5,150,105,0.07);
+            --put: #dc2626;
+            --put-soft: rgba(220,38,38,0.06);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+            --radius: 10px;
+            --radius-lg: 14px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
+        /* ---- Header ---- */
         .header {
-            background: linear-gradient(135deg, #1a2035 0%, #0f1629 100%);
+            background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 24px 40px;
+            padding: 18px 36px;
             display: flex;
             align-items: center;
-            gap: 16px;
+            justify-content: space-between;
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
         }
-
-        .header-icon {
-            width: 48px; height: 48px;
-            background: linear-gradient(135deg, var(--accent), var(--purple));
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px;
-        }
-
+        .header-left { display: flex; align-items: center; gap: 14px; }
         .header h1 {
-            font-size: 24px;
+            font-size: 16px;
             font-weight: 700;
-            background: linear-gradient(90deg, var(--text-primary), var(--accent-light));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--text);
+            letter-spacing: -0.3px;
+        }
+        .header .badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: var(--call-soft);
+            color: var(--call);
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+        .header-right {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+            letter-spacing: 0.2px;
         }
 
-        .header p {
-            color: var(--text-secondary);
-            font-size: 14px;
-            margin-top: 2px;
-        }
-
-        .main-container {
-            max-width: 1400px;
+        /* ---- Layout ---- */
+        .layout {
+            max-width: 1380px;
             margin: 0 auto;
-            padding: 24px 40px;
+            padding: 24px 28px 48px;
             display: grid;
-            grid-template-columns: 340px 1fr;
+            grid-template-columns: 290px 1fr;
             gap: 24px;
         }
 
-        /* Input Panel */
-        .input-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
+        /* ---- Cards ---- */
         .card {
-            background: var(--bg-card);
+            background: var(--surface-raised);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             padding: 20px;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s ease;
         }
-
-        .card-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-secondary);
+        .card:hover { box-shadow: var(--shadow-md); }
+        .card-header {
+            font-size: 10px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            color: var(--text-muted);
             margin-bottom: 16px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+        }
+        .card-header::before {
+            content: '';
+            width: 3px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 2px;
         }
 
-        .card-title span {
-            font-size: 16px;
+        /* ---- Type Toggle ---- */
+        .type-toggle {
+            display: flex;
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 3px;
+            margin-bottom: 18px;
+        }
+        .type-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+        .type-btn.active-call {
+            background: var(--surface);
+            color: var(--call);
+            box-shadow: var(--shadow-sm);
+        }
+        .type-btn.active-put {
+            background: var(--surface);
+            color: var(--put);
+            box-shadow: var(--shadow-sm);
         }
 
-        .input-group {
-            margin-bottom: 14px;
-        }
-
+        /* ---- Inputs ---- */
+        .input-group { margin-bottom: 16px; }
         .input-group:last-child { margin-bottom: 0; }
-
         .input-group label {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
+            align-items: baseline;
+            font-size: 12px;
             color: var(--text-secondary);
             margin-bottom: 6px;
+            font-weight: 500;
         }
-
-        .input-group label .unit {
-            color: var(--text-muted);
-            font-size: 11px;
+        .input-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 12px;
         }
-
-        .input-group input[type="range"] {
+        input[type="range"] {
             width: 100%;
             -webkit-appearance: none;
-            height: 6px;
+            height: 3px;
             border-radius: 3px;
-            background: var(--bg-input);
+            background: linear-gradient(90deg, var(--accent) 0%, #e2e8f0 0%);
             outline: none;
+            transition: background 0.15s;
         }
-
-        .input-group input[type="range"]::-webkit-slider-thumb {
+        input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 18px; height: 18px;
+            width: 16px; height: 16px;
             border-radius: 50%;
-            background: var(--accent);
+            background: var(--surface);
             cursor: pointer;
-            border: 2px solid var(--bg-card);
-            box-shadow: 0 0 8px rgba(59,130,246,0.4);
+            border: 2px solid var(--accent);
+            box-shadow: 0 1px 4px rgba(59,130,246,0.25);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 2px 8px rgba(59,130,246,0.35);
+        }
+        input[type="range"]:active::-webkit-slider-thumb {
+            transform: scale(0.95);
         }
 
-        .input-value {
-            display: inline-block;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 2px 8px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--accent-light);
-            min-width: 60px;
-            text-align: center;
-        }
+        /* ---- Results ---- */
+        .results { display: flex; flex-direction: column; gap: 20px; }
 
-        .option-type-selector {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .option-type-btn {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-input);
-            color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-        }
-
-        .option-type-btn.active-call {
-            background: rgba(16, 185, 129, 0.15);
-            border-color: var(--green);
-            color: var(--green);
-        }
-
-        .option-type-btn.active-put {
-            background: rgba(239, 68, 68, 0.15);
-            border-color: var(--red);
-            color: var(--red);
-        }
-
-        /* Results Panel */
-        .results-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        /* Price Cards */
-        .price-row {
+        /* Price strip */
+        .price-strip {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 16px;
         }
-
-        .price-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
+        .price-box {
+            border-radius: var(--radius-lg);
+            padding: 22px 24px;
+            background: var(--surface);
+            box-shadow: var(--shadow-md);
             position: relative;
             overflow: hidden;
         }
-
-        .price-card::before {
+        .price-box::after {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0;
             height: 3px;
         }
-
-        .price-card.call::before {
-            background: linear-gradient(90deg, var(--green), var(--cyan));
-        }
-
-        .price-card.put::before {
-            background: linear-gradient(90deg, var(--red), var(--orange));
-        }
-
-        .price-card .label {
-            font-size: 13px;
-            color: var(--text-secondary);
+        .price-box.call::after { background: linear-gradient(90deg, var(--call), #34d399); }
+        .price-box.put::after { background: linear-gradient(90deg, var(--put), #f87171); }
+        .price-box .label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
             margin-bottom: 4px;
         }
-
-        .price-card .price {
-            font-size: 36px;
+        .price-box .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px;
             font-weight: 700;
+            letter-spacing: -1px;
+            line-height: 1.1;
         }
-
-        .price-card.call .price { color: var(--green); }
-        .price-card.put .price { color: var(--red); }
-
-        .price-card .sublabel {
-            font-size: 12px;
+        .price-box.call .value { color: var(--call); }
+        .price-box.put .value { color: var(--put); }
+        .price-box .meta {
+            font-size: 11px;
             color: var(--text-muted);
-            margin-top: 4px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+        .price-box .meta strong {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .separator { color: var(--border); }
+        .moneyness {
+            display: inline-flex;
+            align-items: center;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
+        }
+        .moneyness.itm { background: var(--call-soft); color: var(--call); }
+        .moneyness.atm { background: rgba(245,158,11,0.08); color: #d97706; }
+        .moneyness.otm { background: var(--put-soft); color: var(--put); }
 
-        /* Greeks Grid */
-        .greeks-grid {
+        /* Greeks row */
+        .greeks-row {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 12px;
         }
-
-        .greek-card {
-            background: var(--bg-card);
+        .greek-item {
+            background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 16px;
+            border-radius: var(--radius);
+            padding: 14px 10px;
             text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
-
-        .greek-card .greek-symbol {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 2px;
+        .greek-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
-
-        .greek-card .greek-name {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-
-        .greek-card .greek-value {
+        .greek-item .symbol {
             font-size: 18px;
-            font-weight: 600;
-            color: var(--accent-light);
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1;
         }
-
-        .greek-card .greek-desc {
-            font-size: 10px;
+        .greek-item .name {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin: 4px 0 6px;
+            font-weight: 600;
+        }
+        .greek-item .val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .greek-item .desc {
+            font-size: 9px;
             color: var(--text-muted);
             margin-top: 4px;
+            font-weight: 500;
         }
 
         /* Charts */
-        .charts-row {
+        .charts-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 16px;
         }
-
         .chart-card {
-            background: var(--bg-card);
+            background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            box-shadow: var(--shadow-sm);
         }
-
         .chart-card h3 {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-secondary);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
             margin-bottom: 12px;
         }
+        .chart-wrap { position: relative; height: 220px; }
 
-        .chart-container {
-            position: relative;
-            height: 260px;
-        }
-
-        /* Formula Section */
-        .formula-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-        }
-
-        .formula-section h3 {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-        }
-
-        .formula-box {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
+        /* Formula sidebar */
+        .formula-card {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
             line-height: 2;
-            color: var(--text-primary);
-            overflow-x: auto;
+            color: var(--text-secondary);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
         }
+        .formula-card .v { color: var(--accent); font-weight: 600; }
+        .formula-card .f { color: #7c3aed; font-weight: 500; }
 
-        .formula-box .var { color: var(--accent-light); font-weight: 600; }
-        .formula-box .func { color: var(--purple); }
-        .formula-box .op { color: var(--orange); }
-
-        .d-values {
+        .d-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 10px;
             margin-top: 12px;
         }
-
-        .d-value-card {
-            background: var(--bg-input);
+        .d-box {
+            text-align: center;
+            background: var(--bg);
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 12px;
-            text-align: center;
+            padding: 10px;
         }
-
-        .d-value-card .d-label {
-            font-size: 12px;
+        .d-box .d-label {
+            font-size: 10px;
             color: var(--text-muted);
-        }
-
-        .d-value-card .d-num {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--purple);
-            margin: 4px 0;
-        }
-
-        /* Put-Call Parity */
-        .parity-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-        }
-
-        .parity-card h3 {
-            font-size: 14px;
             font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
+            letter-spacing: 0.3px;
+        }
+        .d-box .d-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
         }
 
-        .parity-check {
+        .parity-row {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 14px;
+            gap: 10px;
+            margin-top: 12px;
         }
-
         .parity-side {
             flex: 1;
-            background: var(--bg-input);
+            text-align: center;
+            background: var(--bg);
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 12px;
-            text-align: center;
+            padding: 10px;
+        }
+        .parity-side .p-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .parity-side .p-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .parity-eq {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent);
         }
 
-        .parity-side .parity-label {
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 32px 28px 24px;
             font-size: 11px;
             color: var(--text-muted);
-            margin-bottom: 4px;
+            font-weight: 500;
+            letter-spacing: 0.2px;
         }
 
-        .parity-side .parity-val {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--cyan);
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .layout { grid-template-columns: 1fr; }
+            .greeks-row { grid-template-columns: repeat(3, 1fr); }
         }
-
-        .parity-eq {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--green);
-        }
-
-        /* Moneyness indicator */
-        .moneyness {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .moneyness.itm { background: rgba(16,185,129,0.15); color: var(--green); }
-        .moneyness.atm { background: rgba(245,158,11,0.15); color: var(--orange); }
-        .moneyness.otm { background: rgba(239,68,68,0.15); color: var(--red); }
-
-        @media (max-width: 1200px) {
-            .main-container { grid-template-columns: 1fr; }
-            .greeks-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-
-        @media (max-width: 768px) {
-            .main-container { padding: 16px; }
-            .charts-row { grid-template-columns: 1fr; }
-            .price-row { grid-template-columns: 1fr; }
-            .greeks-grid { grid-template-columns: repeat(2, 1fr); }
+        @media (max-width: 640px) {
+            .layout { padding: 16px; }
+            .header { padding: 14px 20px; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .price-strip { grid-template-columns: 1fr; }
+            .greeks-row { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div class="header-icon">BS</div>
-    <div>
-        <h1>Black-Scholes Option Pricing Tool</h1>
-        <p>Modele de valorisation d'options europeennes &mdash; Greeks, Payoff & Sensibilites</p>
+    <div class="header-left">
+        <h1>Black-Scholes Pricing</h1>
+        <span class="badge">European Options</span>
     </div>
+    <div class="header-right">BSM Model &mdash; Continuous Dividend Yield</div>
 </div>
 
-<div class="main-container">
-    <!-- Input Panel -->
-    <div class="input-panel">
+<div class="layout">
+    <!-- Sidebar -->
+    <div style="display:flex;flex-direction:column;gap:18px;">
         <div class="card">
-            <div class="card-title"><span>&#9881;</span> Parametres</div>
-
-            <div class="option-type-selector">
-                <button class="option-type-btn active-call" id="btnCall" onclick="setType('call')">CALL</button>
-                <button class="option-type-btn" id="btnPut" onclick="setType('put')">PUT</button>
+            <div class="card-header">Parameters</div>
+            <div class="type-toggle">
+                <button class="type-btn active-call" id="btnCall" onclick="setType('call')">Call</button>
+                <button class="type-btn" id="btnPut" onclick="setType('put')">Put</button>
             </div>
-
             <div class="input-group">
-                <label>Prix Spot (S) <span class="input-value" id="valS">100</span></label>
+                <label>Spot Price (S) <span class="input-val" id="valS">100</span></label>
                 <input type="range" id="sliderS" min="10" max="300" value="100" step="1" oninput="update()">
             </div>
-
             <div class="input-group">
-                <label>Prix d'Exercice (K) <span class="input-value" id="valK">100</span></label>
+                <label>Strike (K) <span class="input-val" id="valK">100</span></label>
                 <input type="range" id="sliderK" min="10" max="300" value="100" step="1" oninput="update()">
             </div>
-
             <div class="input-group">
-                <label>Volatilite (&#963;) <span class="input-value" id="valSigma">25%</span></label>
+                <label>Volatility (&sigma;) <span class="input-val" id="valSigma">25%</span></label>
                 <input type="range" id="sliderSigma" min="5" max="100" value="25" step="1" oninput="update()">
             </div>
-
             <div class="input-group">
-                <label>Taux sans risque (r) <span class="input-value" id="valR">5.0%</span></label>
+                <label>Risk-free Rate (r) <span class="input-val" id="valR">5.0%</span></label>
                 <input type="range" id="sliderR" min="0" max="15" value="5" step="0.1" oninput="update()">
             </div>
-
             <div class="input-group">
-                <label>Maturite (T) <span class="input-value" id="valT">1.0 an</span></label>
+                <label>Maturity (T) <span class="input-val" id="valT">1.00y</span></label>
                 <input type="range" id="sliderT" min="0.05" max="5" value="1" step="0.05" oninput="update()">
             </div>
-
             <div class="input-group">
-                <label>Dividende (q) <span class="input-value" id="valQ">0.0%</span></label>
+                <label>Dividend Yield (q) <span class="input-val" id="valQ">0.0%</span></label>
                 <input type="range" id="sliderQ" min="0" max="10" value="0" step="0.1" oninput="update()">
             </div>
         </div>
 
-        <!-- Formula -->
         <div class="card">
-            <div class="card-title"><span>&#8747;</span> Formule Black-Scholes</div>
-            <div class="formula-box">
-                <span class="var">C</span> = <span class="var">S</span><span class="func">N</span>(<span class="var">d<sub>1</sub></span>) - <span class="var">K</span>e<sup><span class="op">-rT</span></sup><span class="func">N</span>(<span class="var">d<sub>2</sub></span>)<br>
-                <span class="var">P</span> = <span class="var">K</span>e<sup><span class="op">-rT</span></sup><span class="func">N</span>(-<span class="var">d<sub>2</sub></span>) - <span class="var">S</span><span class="func">N</span>(-<span class="var">d<sub>1</sub></span>)<br><br>
-                <span class="var">d<sub>1</sub></span> = [ln(<span class="var">S/K</span>) + (<span class="var">r</span> + <span class="var">&#963;</span><sup>2</sup>/2)<span class="var">T</span>] / <span class="var">&#963;</span>&radic;<span class="var">T</span><br>
-                <span class="var">d<sub>2</sub></span> = <span class="var">d<sub>1</sub></span> - <span class="var">&#963;</span>&radic;<span class="var">T</span>
+            <div class="card-header">Pricing Formula</div>
+            <div class="formula-card">
+                <span class="v">C</span> = <span class="v">S</span>e<sup style="font-size:9px">-qT</sup><span class="f">N</span>(<span class="v">d&#8321;</span>) &minus; <span class="v">K</span>e<sup style="font-size:9px">-rT</sup><span class="f">N</span>(<span class="v">d&#8322;</span>)<br>
+                <span class="v">P</span> = <span class="v">K</span>e<sup style="font-size:9px">-rT</sup><span class="f">N</span>(&minus;<span class="v">d&#8322;</span>) &minus; <span class="v">S</span>e<sup style="font-size:9px">-qT</sup><span class="f">N</span>(&minus;<span class="v">d&#8321;</span>)
             </div>
-
-            <div class="d-values">
-                <div class="d-value-card">
+            <div class="d-row">
+                <div class="d-box">
                     <div class="d-label">d&#8321;</div>
-                    <div class="d-num" id="d1Val">0.3250</div>
+                    <div class="d-val" id="d1Val">0.3250</div>
                 </div>
-                <div class="d-value-card">
+                <div class="d-box">
                     <div class="d-label">d&#8322;</div>
-                    <div class="d-num" id="d2Val">0.0750</div>
+                    <div class="d-val" id="d2Val">0.0750</div>
                 </div>
             </div>
         </div>
 
-        <!-- Put-Call Parity -->
         <div class="card">
-            <div class="card-title"><span>&#9878;</span> Parite Put-Call</div>
-            <div class="parity-check">
+            <div class="card-header">Put-Call Parity</div>
+            <div class="parity-row">
                 <div class="parity-side">
-                    <div class="parity-label">C - P</div>
-                    <div class="parity-val" id="parityLeft">0.00</div>
+                    <div class="p-label">C &minus; P</div>
+                    <div class="p-val" id="parityLeft">0.00</div>
                 </div>
                 <div class="parity-eq">=</div>
                 <div class="parity-side">
-                    <div class="parity-label">S - Ke<sup>-rT</sup></div>
-                    <div class="parity-val" id="parityRight">0.00</div>
+                    <div class="p-label">Se<sup style="font-size:7px">-qT</sup> &minus; Ke<sup style="font-size:7px">-rT</sup></div>
+                    <div class="p-val" id="parityRight">0.00</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Results Panel -->
-    <div class="results-panel">
-        <!-- Prices -->
-        <div class="price-row">
-            <div class="price-card call">
-                <div class="label">Prix du Call</div>
-                <div class="price" id="callPrice">10.45</div>
-                <div class="sublabel">
-                    Valeur intrinseque: <strong id="callIntrinsic">0.00</strong> &nbsp;|&nbsp;
-                    Valeur temps: <strong id="callTime">10.45</strong>
+    <!-- Main content -->
+    <div class="results">
+        <div class="price-strip">
+            <div class="price-box call">
+                <div class="label">Call Price</div>
+                <div class="value" id="callPrice">12.34</div>
+                <div class="meta">
+                    Intrinsic <strong id="callIntrinsic">0.00</strong>
+                    <span class="separator">&bull;</span>
+                    Time <strong id="callTime">12.34</strong>
                 </div>
-                <div style="margin-top: 8px;">
-                    <span class="moneyness" id="callMoneyness">ATM</span>
-                </div>
+                <span class="moneyness" id="callMoneyness">ATM</span>
             </div>
-            <div class="price-card put">
-                <div class="label">Prix du Put</div>
-                <div class="price" id="putPrice">5.57</div>
-                <div class="sublabel">
-                    Valeur intrinseque: <strong id="putIntrinsic">0.00</strong> &nbsp;|&nbsp;
-                    Valeur temps: <strong id="putTime">5.57</strong>
+            <div class="price-box put">
+                <div class="label">Put Price</div>
+                <div class="value" id="putPrice">7.46</div>
+                <div class="meta">
+                    Intrinsic <strong id="putIntrinsic">0.00</strong>
+                    <span class="separator">&bull;</span>
+                    Time <strong id="putTime">7.46</strong>
                 </div>
-                <div style="margin-top: 8px;">
-                    <span class="moneyness" id="putMoneyness">ATM</span>
-                </div>
+                <span class="moneyness" id="putMoneyness">ATM</span>
             </div>
         </div>
 
-        <!-- Greeks -->
-        <div class="greeks-grid">
-            <div class="greek-card">
-                <div class="greek-symbol" style="color: var(--green);">&Delta;</div>
-                <div class="greek-name">Delta</div>
-                <div class="greek-value" id="greekDelta">0.6368</div>
-                <div class="greek-desc">Sensibilite au prix</div>
+        <div class="greeks-row">
+            <div class="greek-item">
+                <div class="symbol">&Delta;</div>
+                <div class="name">Delta</div>
+                <div class="val" id="greekDelta">0.6274</div>
+                <div class="desc">Price sensitivity</div>
             </div>
-            <div class="greek-card">
-                <div class="greek-symbol" style="color: var(--orange);">&Gamma;</div>
-                <div class="greek-name">Gamma</div>
-                <div class="greek-value" id="greekGamma">0.0153</div>
-                <div class="greek-desc">Variation du Delta</div>
+            <div class="greek-item">
+                <div class="symbol">&Gamma;</div>
+                <div class="name">Gamma</div>
+                <div class="val" id="greekGamma">0.0151</div>
+                <div class="desc">Delta curvature</div>
             </div>
-            <div class="greek-card">
-                <div class="greek-symbol" style="color: var(--red);">&Theta;</div>
-                <div class="greek-name">Theta</div>
-                <div class="greek-value" id="greekTheta">-6.414</div>
-                <div class="greek-desc">Erosion temporelle / an</div>
+            <div class="greek-item">
+                <div class="symbol">&Theta;</div>
+                <div class="name">Theta</div>
+                <div class="val" id="greekTheta">-7.250</div>
+                <div class="desc">Time decay / yr</div>
             </div>
-            <div class="greek-card">
-                <div class="greek-symbol" style="color: var(--purple);">V</div>
-                <div class="greek-name">Vega</div>
-                <div class="greek-value" id="greekVega">38.33</div>
-                <div class="greek-desc">Sensibilite a la vol.</div>
+            <div class="greek-item">
+                <div class="symbol">&nu;</div>
+                <div class="name">Vega</div>
+                <div class="val" id="greekVega">0.38</div>
+                <div class="desc">Vol sensitivity</div>
             </div>
-            <div class="greek-card">
-                <div class="greek-symbol" style="color: var(--cyan);">&rho;</div>
-                <div class="greek-name">Rho</div>
-                <div class="greek-value" id="greekRho">53.23</div>
-                <div class="greek-desc">Sensibilite au taux</div>
-            </div>
-        </div>
-
-        <!-- Charts -->
-        <div class="charts-row">
-            <div class="chart-card">
-                <h3>Payoff a l'Echeance vs Prix du Sous-Jacent</h3>
-                <div class="chart-container">
-                    <canvas id="payoffChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-card">
-                <h3>Prix de l'Option vs Prix du Sous-Jacent</h3>
-                <div class="chart-container">
-                    <canvas id="priceChart"></canvas>
-                </div>
+            <div class="greek-item">
+                <div class="symbol">&rho;</div>
+                <div class="name">Rho</div>
+                <div class="val" id="greekRho">0.50</div>
+                <div class="desc">Rate sensitivity</div>
             </div>
         </div>
 
-        <div class="charts-row">
+        <div class="charts-grid">
             <div class="chart-card">
-                <h3>Delta vs Prix du Sous-Jacent</h3>
-                <div class="chart-container">
-                    <canvas id="deltaChart"></canvas>
-                </div>
+                <h3>Payoff at Expiry</h3>
+                <div class="chart-wrap"><canvas id="payoffChart"></canvas></div>
             </div>
             <div class="chart-card">
-                <h3>Prix de l'Option vs Volatilite</h3>
-                <div class="chart-container">
-                    <canvas id="volChart"></canvas>
-                </div>
+                <h3>Option Price vs Spot</h3>
+                <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Delta vs Spot</h3>
+                <div class="chart-wrap"><canvas id="deltaChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Price vs Volatility</h3>
+                <div class="chart-wrap"><canvas id="volChart"></canvas></div>
             </div>
         </div>
     </div>
 </div>
 
+<div class="footer">
+    Built with the Black-Scholes-Merton model &mdash; For educational purposes only
+</div>
+
 <script>
-// ===== Black-Scholes Mathematics =====
+// ===== Black-Scholes Engine =====
 function normCDF(x) {
-    const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
-    const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
-    const sign = x < 0 ? -1 : 1;
-    x = Math.abs(x) / Math.sqrt(2);
-    const t = 1.0 / (1.0 + p * x);
-    const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
-    return 0.5 * (1.0 + sign * y);
+    const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+    const sign=x<0?-1:1;
+    x=Math.abs(x)/Math.sqrt(2);
+    const t=1/(1+p*x);
+    const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+    return 0.5*(1+sign*y);
+}
+function normPDF(x){return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI);}
+
+function bs(S,K,T,r,sigma,q){
+    if(T<=0){const cp=Math.max(S-K,0),pp=Math.max(K-S,0);return{call:cp,put:pp,d1:0,d2:0,delta:{call:S>K?1:0,put:S<K?-1:0},gamma:0,theta:{call:0,put:0},vega:0,rho:{call:0,put:0}};}
+    const sT=Math.sqrt(T),d1=(Math.log(S/K)+(r-q+0.5*sigma*sigma)*T)/(sigma*sT),d2=d1-sigma*sT;
+    const Nd1=normCDF(d1),Nd2=normCDF(d2),Nnd1=normCDF(-d1),Nnd2=normCDF(-d2),nd1=normPDF(d1);
+    const eqT=Math.exp(-q*T),erT=Math.exp(-r*T);
+    const call=S*eqT*Nd1-K*erT*Nd2,put=K*erT*Nnd2-S*eqT*Nnd1;
+    return{call,put,d1,d2,
+        delta:{call:eqT*Nd1,put:-eqT*Nnd1},
+        gamma:eqT*nd1/(S*sigma*sT),
+        theta:{call:-(S*sigma*eqT*nd1)/(2*sT)-r*K*erT*Nd2+q*S*eqT*Nd1,put:-(S*sigma*eqT*nd1)/(2*sT)+r*K*erT*Nnd2-q*S*eqT*Nnd1},
+        vega:S*eqT*nd1*sT/100,
+        rho:{call:K*T*erT*Nd2/100,put:-K*T*erT*Nnd2/100}};
 }
 
-function normPDF(x) {
-    return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
-}
+let optionType='call';
+let payoffChart,priceChart,deltaChart,volChart;
 
-function blackScholes(S, K, T, r, sigma, q) {
-    if (T <= 0) {
-        const callPayoff = Math.max(S - K, 0);
-        const putPayoff = Math.max(K - S, 0);
-        return {
-            call: callPayoff, put: putPayoff,
-            d1: 0, d2: 0,
-            delta: { call: S > K ? 1 : 0, put: S < K ? -1 : 0 },
-            gamma: 0, theta: { call: 0, put: 0 },
-            vega: 0, rho: { call: 0, put: 0 }
-        };
-    }
-
-    const sqrtT = Math.sqrt(T);
-    const d1 = (Math.log(S / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * sqrtT);
-    const d2 = d1 - sigma * sqrtT;
-
-    const Nd1 = normCDF(d1);
-    const Nd2 = normCDF(d2);
-    const Nnd1 = normCDF(-d1);
-    const Nnd2 = normCDF(-d2);
-    const nd1 = normPDF(d1);
-
-    const expQT = Math.exp(-q * T);
-    const expRT = Math.exp(-r * T);
-
-    const call = S * expQT * Nd1 - K * expRT * Nd2;
-    const put = K * expRT * Nnd2 - S * expQT * Nnd1;
-
-    // Greeks
-    const deltaCall = expQT * Nd1;
-    const deltaPut = -expQT * Nnd1;
-
-    const gamma = (expQT * nd1) / (S * sigma * sqrtT);
-
-    const thetaCall = (-(S * sigma * expQT * nd1) / (2 * sqrtT)
-        - r * K * expRT * Nd2
-        + q * S * expQT * Nd1);
-
-    const thetaPut = (-(S * sigma * expQT * nd1) / (2 * sqrtT)
-        + r * K * expRT * Nnd2
-        - q * S * expQT * Nnd1);
-
-    const vega = S * expQT * nd1 * sqrtT / 100; // per 1% move
-
-    const rhoCall = K * T * expRT * Nd2 / 100;
-    const rhoPut = -K * T * expRT * Nnd2 / 100;
-
-    return {
-        call, put, d1, d2,
-        delta: { call: deltaCall, put: deltaPut },
-        gamma,
-        theta: { call: thetaCall, put: thetaPut },
-        vega,
-        rho: { call: rhoCall, put: rhoPut }
-    };
-}
-
-// ===== State =====
-let optionType = 'call';
-let payoffChart, priceChart, deltaChart, volChart;
-
-function setType(type) {
-    optionType = type;
-    document.getElementById('btnCall').className = 'option-type-btn' + (type === 'call' ? ' active-call' : '');
-    document.getElementById('btnPut').className = 'option-type-btn' + (type === 'put' ? ' active-put' : '');
+function setType(t){
+    optionType=t;
+    document.getElementById('btnCall').className='type-btn'+(t==='call'?' active-call':'');
+    document.getElementById('btnPut').className='type-btn'+(t==='put'?' active-put':'');
     update();
 }
 
-function getParams() {
-    const S = parseFloat(document.getElementById('sliderS').value);
-    const K = parseFloat(document.getElementById('sliderK').value);
-    const sigma = parseFloat(document.getElementById('sliderSigma').value) / 100;
-    const r = parseFloat(document.getElementById('sliderR').value) / 100;
-    const T = parseFloat(document.getElementById('sliderT').value);
-    const q = parseFloat(document.getElementById('sliderQ').value) / 100;
-    return { S, K, sigma, r, T, q };
+function getP(){
+    return{S:+document.getElementById('sliderS').value,K:+document.getElementById('sliderK').value,
+        sigma:+document.getElementById('sliderSigma').value/100,r:+document.getElementById('sliderR').value/100,
+        T:+document.getElementById('sliderT').value,q:+document.getElementById('sliderQ').value/100};
 }
 
-function update() {
-    const { S, K, sigma, r, T, q } = getParams();
-
-    // Update labels
-    document.getElementById('valS').textContent = S.toFixed(0);
-    document.getElementById('valK').textContent = K.toFixed(0);
-    document.getElementById('valSigma').textContent = (sigma * 100).toFixed(0) + '%';
-    document.getElementById('valR').textContent = (r * 100).toFixed(1) + '%';
-    document.getElementById('valT').textContent = T.toFixed(2) + ' an';
-    document.getElementById('valQ').textContent = (q * 100).toFixed(1) + '%';
-
-    const bs = blackScholes(S, K, T, r, sigma, q);
-
-    // Prices
-    document.getElementById('callPrice').textContent = bs.call.toFixed(2);
-    document.getElementById('putPrice').textContent = bs.put.toFixed(2);
-
-    // Intrinsic / Time value
-    const callIntr = Math.max(S - K, 0);
-    const putIntr = Math.max(K - S, 0);
-    document.getElementById('callIntrinsic').textContent = callIntr.toFixed(2);
-    document.getElementById('callTime').textContent = (bs.call - callIntr).toFixed(2);
-    document.getElementById('putIntrinsic').textContent = putIntr.toFixed(2);
-    document.getElementById('putTime').textContent = (bs.put - putIntr).toFixed(2);
-
-    // Moneyness
-    function setMoneyness(id, isITM, ratio) {
-        const el = document.getElementById(id);
-        if (Math.abs(ratio - 1) < 0.02) {
-            el.textContent = 'ATM'; el.className = 'moneyness atm';
-        } else if (isITM) {
-            el.textContent = 'ITM'; el.className = 'moneyness itm';
-        } else {
-            el.textContent = 'OTM'; el.className = 'moneyness otm';
-        }
+// Range slider fill
+document.querySelectorAll('input[type="range"]').forEach(slider=>{
+    function fill(){
+        const pct=((slider.value-slider.min)/(slider.max-slider.min))*100;
+        slider.style.background='linear-gradient(90deg, var(--accent) '+pct+'%, #e2e8f0 '+pct+'%)';
     }
-    setMoneyness('callMoneyness', S > K, S / K);
-    setMoneyness('putMoneyness', S < K, S / K);
+    slider.addEventListener('input',fill);
+    fill();
+});
 
-    // d1, d2
-    document.getElementById('d1Val').textContent = bs.d1.toFixed(4);
-    document.getElementById('d2Val').textContent = bs.d2.toFixed(4);
+function update(){
+    const{S,K,sigma,r,T,q}=getP();
+    document.getElementById('valS').textContent=S.toFixed(0);
+    document.getElementById('valK').textContent=K.toFixed(0);
+    document.getElementById('valSigma').textContent=(sigma*100).toFixed(0)+'%';
+    document.getElementById('valR').textContent=(r*100).toFixed(1)+'%';
+    document.getElementById('valT').textContent=T.toFixed(2)+'y';
+    document.getElementById('valQ').textContent=(q*100).toFixed(1)+'%';
 
-    // Greeks
-    const isCall = optionType === 'call';
-    document.getElementById('greekDelta').textContent = (isCall ? bs.delta.call : bs.delta.put).toFixed(4);
-    document.getElementById('greekGamma').textContent = bs.gamma.toFixed(4);
-    document.getElementById('greekTheta').textContent = (isCall ? bs.theta.call : bs.theta.put).toFixed(3);
-    document.getElementById('greekVega').textContent = bs.vega.toFixed(2);
-    document.getElementById('greekRho').textContent = (isCall ? bs.rho.call : bs.rho.put).toFixed(2);
+    // Update range fills
+    document.querySelectorAll('input[type="range"]').forEach(function(s){
+        var pct=((s.value-s.min)/(s.max-s.min))*100;
+        s.style.background='linear-gradient(90deg, var(--accent) '+pct+'%, #e2e8f0 '+pct+'%)';
+    });
 
-    // Put-Call Parity
-    const pLeft = (bs.call - bs.put).toFixed(4);
-    const pRight = (S * Math.exp(-q * T) - K * Math.exp(-r * T)).toFixed(4);
-    document.getElementById('parityLeft').textContent = pLeft;
-    document.getElementById('parityRight').textContent = pRight;
+    const o=bs(S,K,T,r,sigma,q);
+    document.getElementById('callPrice').textContent=o.call.toFixed(2);
+    document.getElementById('putPrice').textContent=o.put.toFixed(2);
+
+    const ci=Math.max(S-K,0),pi=Math.max(K-S,0);
+    document.getElementById('callIntrinsic').textContent=ci.toFixed(2);
+    document.getElementById('callTime').textContent=(o.call-ci).toFixed(2);
+    document.getElementById('putIntrinsic').textContent=pi.toFixed(2);
+    document.getElementById('putTime').textContent=(o.put-pi).toFixed(2);
+
+    function setM(id,itm,ratio){var e=document.getElementById(id);if(Math.abs(ratio-1)<0.02){e.textContent='ATM';e.className='moneyness atm';}else if(itm){e.textContent='ITM';e.className='moneyness itm';}else{e.textContent='OTM';e.className='moneyness otm';}}
+    setM('callMoneyness',S>K,S/K);setM('putMoneyness',S<K,S/K);
+
+    document.getElementById('d1Val').textContent=o.d1.toFixed(4);
+    document.getElementById('d2Val').textContent=o.d2.toFixed(4);
+
+    const isC=optionType==='call';
+    document.getElementById('greekDelta').textContent=(isC?o.delta.call:o.delta.put).toFixed(4);
+    document.getElementById('greekGamma').textContent=o.gamma.toFixed(4);
+    document.getElementById('greekTheta').textContent=(isC?o.theta.call:o.theta.put).toFixed(3);
+    document.getElementById('greekVega').textContent=o.vega.toFixed(2);
+    document.getElementById('greekRho').textContent=(isC?o.rho.call:o.rho.put).toFixed(2);
+
+    document.getElementById('parityLeft').textContent=(o.call-o.put).toFixed(4);
+    document.getElementById('parityRight').textContent=(S*Math.exp(-q*T)-K*Math.exp(-r*T)).toFixed(4);
 
     updateCharts();
 }
 
 // ===== Charts =====
-const chartDefaults = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-        legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
-    },
-    scales: {
-        x: {
-            grid: { color: 'rgba(42,52,85,0.5)' },
-            ticks: { color: '#64748b', font: { size: 10 } }
-        },
-        y: {
-            grid: { color: 'rgba(42,52,85,0.5)' },
-            ticks: { color: '#64748b', font: { size: 10 } }
-        }
+const chartOpts={
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#94a3b8',font:{size:10,family:'Inter,sans-serif',weight:'500'},boxWidth:8,boxHeight:8,padding:10,usePointStyle:true,pointStyle:'circle'},position:'top'}},
+    scales:{
+        x:{grid:{color:'rgba(0,0,0,0.03)',drawBorder:false},ticks:{color:'#94a3b8',font:{size:9,family:'Inter,sans-serif'}},border:{display:false}},
+        y:{grid:{color:'rgba(0,0,0,0.03)',drawBorder:false},ticks:{color:'#94a3b8',font:{size:9,family:'Inter,sans-serif'}},border:{display:false}}
     }
 };
 
-function updateCharts() {
-    const { S, K, sigma, r, T, q } = getParams();
-    const isCall = optionType === 'call';
+function updateCharts(){
+    const{S,K,sigma,r,T,q}=getP();
+    const isC=optionType==='call';
+    const sMin=Math.max(K*0.4,5),sMax=K*1.6,spots=[];
+    for(let s=sMin;s<=sMax;s+=(sMax-sMin)/80)spots.push(s);
 
-    // Range of spot prices for charts
-    const sMin = Math.max(K * 0.4, 5);
-    const sMax = K * 1.6;
-    const spots = [];
-    for (let s = sMin; s <= sMax; s += (sMax - sMin) / 80) spots.push(s);
+    const payoffs=spots.map(s=>isC?Math.max(s-K,0):Math.max(K-s,0));
+    const prem=isC?bs(S,K,T,r,sigma,q).call:bs(S,K,T,r,sigma,q).put;
+    const pl=spots.map((s,i)=>payoffs[i]-prem);
 
-    // Payoff chart
-    const payoffs = spots.map(s => isCall ? Math.max(s - K, 0) : Math.max(K - s, 0));
-    const premiums = spots.map(s => {
-        const b = blackScholes(s, K, T, r, sigma, q);
-        return isCall ? b.call : b.put;
-    });
-    const profitLoss = spots.map((s, i) => {
-        const premium = blackScholes(S, K, T, r, sigma, q);
-        const prem = isCall ? premium.call : premium.put;
-        return payoffs[i] - prem;
-    });
+    if(payoffChart)payoffChart.destroy();
+    payoffChart=new Chart(document.getElementById('payoffChart'),{type:'line',data:{
+        labels:spots.map(s=>s.toFixed(0)),
+        datasets:[
+            {label:'Payoff',data:payoffs,borderColor:isC?'#059669':'#dc2626',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.1},
+            {label:'P/L',data:pl,borderColor:'#3b82f6',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,3],pointRadius:0,tension:0.1},
+            {label:'Zero',data:spots.map(()=>0),borderColor:'#e2e8f0',backgroundColor:'transparent',borderWidth:1,pointRadius:0,borderDash:[3,3]}
+        ]},options:chartOpts});
 
-    if (payoffChart) payoffChart.destroy();
-    payoffChart = new Chart(document.getElementById('payoffChart'), {
-        type: 'line',
-        data: {
-            labels: spots.map(s => s.toFixed(0)),
-            datasets: [
-                {
-                    label: 'Payoff',
-                    data: payoffs,
-                    borderColor: isCall ? '#10b981' : '#ef4444',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                },
-                {
-                    label: 'Profit/Perte',
-                    data: profitLoss,
-                    borderColor: '#8b5cf6',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    borderDash: [5, 3],
-                    pointRadius: 0,
-                },
-                {
-                    label: 'Zero',
-                    data: spots.map(() => 0),
-                    borderColor: '#64748b',
-                    backgroundColor: 'transparent',
-                    borderWidth: 1,
-                    pointRadius: 0,
-                    borderDash: [2, 2],
-                }
-            ]
-        },
-        options: { ...chartDefaults }
-    });
+    const cp=spots.map(s=>bs(s,K,T,r,sigma,q).call),pp=spots.map(s=>bs(s,K,T,r,sigma,q).put);
+    if(priceChart)priceChart.destroy();
+    priceChart=new Chart(document.getElementById('priceChart'),{type:'line',data:{
+        labels:spots.map(s=>s.toFixed(0)),
+        datasets:[
+            {label:'Call',data:cp,borderColor:'#059669',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2},
+            {label:'Put',data:pp,borderColor:'#dc2626',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2}
+        ]},options:chartOpts});
 
-    // Option price vs spot
-    const callPrices = spots.map(s => blackScholes(s, K, T, r, sigma, q).call);
-    const putPrices = spots.map(s => blackScholes(s, K, T, r, sigma, q).put);
+    const dc=spots.map(s=>bs(s,K,T,r,sigma,q).delta.call),dp=spots.map(s=>bs(s,K,T,r,sigma,q).delta.put);
+    if(deltaChart)deltaChart.destroy();
+    deltaChart=new Chart(document.getElementById('deltaChart'),{type:'line',data:{
+        labels:spots.map(s=>s.toFixed(0)),
+        datasets:[
+            {label:'Delta Call',data:dc,borderColor:'#059669',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2},
+            {label:'Delta Put',data:dp,borderColor:'#dc2626',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2}
+        ]},options:chartOpts});
 
-    if (priceChart) priceChart.destroy();
-    priceChart = new Chart(document.getElementById('priceChart'), {
-        type: 'line',
-        data: {
-            labels: spots.map(s => s.toFixed(0)),
-            datasets: [
-                {
-                    label: 'Call',
-                    data: callPrices,
-                    borderColor: '#10b981',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                },
-                {
-                    label: 'Put',
-                    data: putPrices,
-                    borderColor: '#ef4444',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                }
-            ]
-        },
-        options: { ...chartDefaults }
-    });
-
-    // Delta vs spot
-    const deltasCAll = spots.map(s => blackScholes(s, K, T, r, sigma, q).delta.call);
-    const deltasPut = spots.map(s => blackScholes(s, K, T, r, sigma, q).delta.put);
-
-    if (deltaChart) deltaChart.destroy();
-    deltaChart = new Chart(document.getElementById('deltaChart'), {
-        type: 'line',
-        data: {
-            labels: spots.map(s => s.toFixed(0)),
-            datasets: [
-                {
-                    label: 'Delta Call',
-                    data: deltasCAll,
-                    borderColor: '#10b981',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                },
-                {
-                    label: 'Delta Put',
-                    data: deltasPut,
-                    borderColor: '#ef4444',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                }
-            ]
-        },
-        options: { ...chartDefaults }
-    });
-
-    // Price vs Volatility
-    const vols = [];
-    for (let v = 5; v <= 80; v += 1) vols.push(v / 100);
-    const callByVol = vols.map(v => blackScholes(S, K, T, r, v, q).call);
-    const putByVol = vols.map(v => blackScholes(S, K, T, r, v, q).put);
-
-    if (volChart) volChart.destroy();
-    volChart = new Chart(document.getElementById('volChart'), {
-        type: 'line',
-        data: {
-            labels: vols.map(v => (v * 100).toFixed(0) + '%'),
-            datasets: [
-                {
-                    label: 'Call',
-                    data: callByVol,
-                    borderColor: '#10b981',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                },
-                {
-                    label: 'Put',
-                    data: putByVol,
-                    borderColor: '#ef4444',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                }
-            ]
-        },
-        options: { ...chartDefaults }
-    });
+    const vols=[];for(let v=5;v<=80;v++)vols.push(v/100);
+    const cv=vols.map(v=>bs(S,K,T,r,v,q).call),pv=vols.map(v=>bs(S,K,T,r,v,q).put);
+    if(volChart)volChart.destroy();
+    volChart=new Chart(document.getElementById('volChart'),{type:'line',data:{
+        labels:vols.map(v=>(v*100).toFixed(0)+'%'),
+        datasets:[
+            {label:'Call',data:cv,borderColor:'#059669',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2},
+            {label:'Put',data:pv,borderColor:'#dc2626',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2}
+        ]},options:chartOpts});
 }
 
-// Initialize
 update();
 </script>
-
 </body>
 </html>
