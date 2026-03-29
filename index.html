@@ -690,59 +690,76 @@ function update(){
 // ===== Charts =====
 const chartOpts={
     responsive:true,maintainAspectRatio:false,
+    animation:false,
     plugins:{legend:{labels:{color:'#94a3b8',font:{size:10,family:'Inter,sans-serif',weight:'500'},boxWidth:8,boxHeight:8,padding:10,usePointStyle:true,pointStyle:'circle'},position:'top'}},
     scales:{
-        x:{grid:{color:'rgba(0,0,0,0.03)',drawBorder:false},ticks:{color:'#94a3b8',font:{size:9,family:'Inter,sans-serif'}},border:{display:false}},
+        x:{grid:{color:'rgba(0,0,0,0.03)',drawBorder:false},ticks:{color:'#94a3b8',font:{size:9,family:'Inter,sans-serif'},maxTicksLimit:10},border:{display:false}},
         y:{grid:{color:'rgba(0,0,0,0.03)',drawBorder:false},ticks:{color:'#94a3b8',font:{size:9,family:'Inter,sans-serif'}},border:{display:false}}
     }
 };
+
+function makeChart(canvasId,datasets){
+    return new Chart(document.getElementById(canvasId),{type:'line',data:{labels:[],datasets:datasets},options:chartOpts});
+}
+
+// Initialize charts once
+payoffChart=makeChart('payoffChart',[
+    {label:'Payoff',data:[],borderColor:'#059669',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.1},
+    {label:'P/L',data:[],borderColor:'#3b82f6',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,3],pointRadius:0,tension:0.1},
+    {label:'Zero',data:[],borderColor:'#e2e8f0',backgroundColor:'transparent',borderWidth:1,pointRadius:0,borderDash:[3,3]}
+]);
+priceChart=makeChart('priceChart',[
+    {label:'Call',data:[],borderColor:'#059669',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2},
+    {label:'Put',data:[],borderColor:'#dc2626',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2}
+]);
+deltaChart=makeChart('deltaChart',[
+    {label:'Delta Call',data:[],borderColor:'#059669',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2},
+    {label:'Delta Put',data:[],borderColor:'#dc2626',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2}
+]);
+volChart=makeChart('volChart',[
+    {label:'Call',data:[],borderColor:'#059669',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2},
+    {label:'Put',data:[],borderColor:'#dc2626',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2}
+]);
 
 function updateCharts(){
     const{S,K,sigma,r,T,q}=getP();
     const isC=optionType==='call';
     const sMin=Math.max(K*0.4,5),sMax=K*1.6,spots=[];
     for(let s=sMin;s<=sMax;s+=(sMax-sMin)/80)spots.push(s);
+    const labels=spots.map(s=>s.toFixed(0));
 
+    // Payoff chart
     const payoffs=spots.map(s=>isC?Math.max(s-K,0):Math.max(K-s,0));
     const prem=isC?bs(S,K,T,r,sigma,q).call:bs(S,K,T,r,sigma,q).put;
     const pl=spots.map((s,i)=>payoffs[i]-prem);
+    payoffChart.data.labels=labels;
+    payoffChart.data.datasets[0].data=payoffs;
+    payoffChart.data.datasets[0].borderColor=isC?'#059669':'#dc2626';
+    payoffChart.data.datasets[1].data=pl;
+    payoffChart.data.datasets[2].data=spots.map(()=>0);
+    payoffChart.update('none');
 
-    if(payoffChart)payoffChart.destroy();
-    payoffChart=new Chart(document.getElementById('payoffChart'),{type:'line',data:{
-        labels:spots.map(s=>s.toFixed(0)),
-        datasets:[
-            {label:'Payoff',data:payoffs,borderColor:isC?'#059669':'#dc2626',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.1},
-            {label:'P/L',data:pl,borderColor:'#3b82f6',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,3],pointRadius:0,tension:0.1},
-            {label:'Zero',data:spots.map(()=>0),borderColor:'#e2e8f0',backgroundColor:'transparent',borderWidth:1,pointRadius:0,borderDash:[3,3]}
-        ]},options:chartOpts});
-
+    // Price chart
     const cp=spots.map(s=>bs(s,K,T,r,sigma,q).call),pp=spots.map(s=>bs(s,K,T,r,sigma,q).put);
-    if(priceChart)priceChart.destroy();
-    priceChart=new Chart(document.getElementById('priceChart'),{type:'line',data:{
-        labels:spots.map(s=>s.toFixed(0)),
-        datasets:[
-            {label:'Call',data:cp,borderColor:'#059669',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2},
-            {label:'Put',data:pp,borderColor:'#dc2626',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2}
-        ]},options:chartOpts});
+    priceChart.data.labels=labels;
+    priceChart.data.datasets[0].data=cp;
+    priceChart.data.datasets[1].data=pp;
+    priceChart.update('none');
 
+    // Delta chart
     const dc=spots.map(s=>bs(s,K,T,r,sigma,q).delta.call),dp=spots.map(s=>bs(s,K,T,r,sigma,q).delta.put);
-    if(deltaChart)deltaChart.destroy();
-    deltaChart=new Chart(document.getElementById('deltaChart'),{type:'line',data:{
-        labels:spots.map(s=>s.toFixed(0)),
-        datasets:[
-            {label:'Delta Call',data:dc,borderColor:'#059669',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2},
-            {label:'Delta Put',data:dp,borderColor:'#dc2626',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2}
-        ]},options:chartOpts});
+    deltaChart.data.labels=labels;
+    deltaChart.data.datasets[0].data=dc;
+    deltaChart.data.datasets[1].data=dp;
+    deltaChart.update('none');
 
+    // Vol chart
     const vols=[];for(let v=5;v<=80;v++)vols.push(v/100);
     const cv=vols.map(v=>bs(S,K,T,r,v,q).call),pv=vols.map(v=>bs(S,K,T,r,v,q).put);
-    if(volChart)volChart.destroy();
-    volChart=new Chart(document.getElementById('volChart'),{type:'line',data:{
-        labels:vols.map(v=>(v*100).toFixed(0)+'%'),
-        datasets:[
-            {label:'Call',data:cv,borderColor:'#059669',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2},
-            {label:'Put',data:pv,borderColor:'#dc2626',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.2}
-        ]},options:chartOpts});
+    volChart.data.labels=vols.map(v=>(v*100).toFixed(0)+'%');
+    volChart.data.datasets[0].data=cv;
+    volChart.data.datasets[1].data=pv;
+    volChart.update('none');
 }
 
 update();
