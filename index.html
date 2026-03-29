@@ -824,7 +824,6 @@ function updateCharts(){
 
 // ===== 3D Surface =====
 let surfaceMode='spot-vol';
-let surfaceInited=false;
 
 function setSurfaceMode(mode){
     surfaceMode=mode;
@@ -903,17 +902,13 @@ function updateSurface(){
         },
         margin:{l:0,r:0,t:0,b:0},
         paper_bgcolor:'transparent',
-        font:{family:'Inter'}
+        font:{family:'Inter'},
+        transition:{duration:0}
     };
 
     const config={responsive:true,displayModeBar:true,modeBarButtonsToRemove:['toImage','sendDataToCloud'],displaylogo:false};
 
-    if(!surfaceInited){
-        Plotly.newPlot('surface3d',data,layout,config);
-        surfaceInited=true;
-    } else {
-        Plotly.react('surface3d',data,layout,config);
-    }
+    Plotly.newPlot('surface3d',data,layout,config);
 }
 
 update();
